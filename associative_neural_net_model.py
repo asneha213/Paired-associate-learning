@@ -195,6 +195,8 @@ def get_g_squared_value(O, E):
     if len(np.where(E==0)[0]) > 0:
         return 1000
 
+    O[np.where(O==0)] = 0.001
+
     g_squared = 0
     g_squared += 2*72*(O[0])*math.log(O[0]/E[0]) + 2*72*(1-O[0])*math.log((1-O[0])/(1-E[0]))
     g_squared += 2*72*O[0]*O[1]*math.log(O[1]/E[1]) + 2*72*O[0]*(1-O[1])*math.log((1-O[1])/(1-E[1]))
@@ -204,7 +206,7 @@ def get_g_squared_value(O, E):
 
     return g_squared
 
-def run_optimizer_on_subject():
+def run_optimizer_on_subject(sub):
     def run(mu, sigma, rho, mu_t=None, sigma_t=None, experiment='no-test'):
         # Using the same mu and sigma for all repetitions of 1,3 and 5 
         if experiment=='no-test': 
@@ -217,7 +219,7 @@ def run_optimizer_on_subject():
             mus = [mu, mu, mu, mu_t]
             sigmas = [sigma, sigma, sigma, sigma_t]
 
-        nsim = 40
+        nsim = 300
 
         data_stats = get_data_stats()
 
@@ -242,7 +244,7 @@ def run_optimizer_on_subject():
 
         #rmsd = norm(stats_array - data_stats[int(sub)])/math.sqrt(5)
         #rmsd = norm(stats_array - np.mean(data_stats, axis=0))/math.sqrt(5)
-        gsquared = get_g_squared_value(np.mean(data_stats, axis=0), stats_array)
+        gsquared = get_g_squared_value(data_stats[int(sub)], stats_array)
 
         return gsquared
     return run
