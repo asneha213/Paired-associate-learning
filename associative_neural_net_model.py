@@ -89,7 +89,7 @@ def get_pdf(mu, sigma, rho):
     return pdf
 
 
-def run_simuation(pdfs, mus, test_learn=False, test_symmetric=False):
+def run_simuation(pdfs, mus, sigmas, experiment):
     hopnet = HopNet(70)
     nodes = np.array(list(range(140)))
     nodes_store = np.zeros((12,140)).astype(int)
@@ -127,8 +127,8 @@ def run_simuation(pdfs, mus, test_learn=False, test_symmetric=False):
             results1[j] = hopnet.recall(B[j],A[j], nodes_store[j], reverse=True)
 
 
-        if results1[j] and test_learn:
-            if test_symmetric:
+        if results1[j] and experiment != 'no-test':
+            if experiment == 'uncorr-test':
                 while(1):
                     pr_f, pr_b = pdfs[-1].rvs(1)
                     if pr_f > 0 and pr_f < 1 and pr_b >0 and pr_b < 1:
@@ -152,8 +152,8 @@ def run_simuation(pdfs, mus, test_learn=False, test_symmetric=False):
         if j%4 == 3:
             results2[j] = hopnet.recall(B[j],A[j], nodes_store[j], reverse=True)
 
-        if results2[j] and test_learn:
-            if test_symmetric:
+        if results2[j] and experiment != 'no-test':
+            if experiment=='uncorr-test':
                 while(1):
                     pr_f, pr_b = pdfs[-1].rvs(1)
                     if pr_f > 0 and pr_f < 1 and pr_b >0 and pr_b < 1:
@@ -205,16 +205,19 @@ def get_g_squared_value(O, E):
     return g_squared
 
 def run_optimizer_on_subject():
-    def run(mu, sigma, rho, mu_t=None, sigma_t=0.2, test_learn=True, test_symmetric=True):
-        
-        if test_learn:
-            mus = [mu, mu, mu, mu_t]
-            sigmas = [sigma, sigma, sigma, sigma_t]
-        else: 
+    def run(mu, sigma, rho, mu_t=None, sigma_t=None, experiment='no-test'):
+        # Using the same mu and sigma for all repetitions of 1,3 and 5 
+        if experiment=='no-test': 
             mus = [mu, mu, mu]
             sigmas = [sigma, sigma, sigma]
+        elif experiment == 'corr-test':
+            mus = [mu, mu, mu, mu_t]
+            sigmas = [sigma, sigma, sigma]
+        elif experiment == 'uncorr-test':
+            mus = [mu, mu, mu, mu_t]
+            sigmas = [sigma, sigma, sigma, sigma_t]
 
-        nsim = 90
+        nsim = 40
 
         data_stats = get_data_stats()
 
@@ -223,8 +226,12 @@ def run_optimizer_on_subject():
         for k in range(nsim):
             if k%10 == 0:
                 print(k)
-            pdfs = [get_pdf(mus[i], sigmas[i], rho) for i in range(len(mus))]
-            stats = run_simuation(pdfs, mus, test_learn, test_symmetric)
+            if experiment == 'corr-test':
+                pdfs = [get_pdf(mus[i], sigmas[i], rho) for i in range(len(mus)-1)]
+            else:
+                pdfs = [get_pdf(mus[i], sigmas[i], rho) for i in range(len(mus))]
+
+            stats = run_simuation(pdfs, mus, sigmas, experiment)
             stats_array += stats
 
         stats_array[1] = stats_array[1]/stats_array[0]
@@ -246,8 +253,7 @@ if __name__ == "__main__":
     parser.add_argument('--mus', dest='mus', type=list,  default=[0.6, 0.6, 0.6, 0.2])
     parser.add_argument('--sigmas', dest='sigmas', type=list,  default=[0.2, 0.2, 0.2, 0.2])
     parser.add_argument('--rho', dest='rho', default=0.9)
-    parser.add_argument('--test_learn', dest='test_learn', action='store_true')
-    parser.add_argument('--test_sym', dest='test_sym', action='store_true')
+    parser.add_argument('--experiment', dest='experiment', type=str,  default='no-test')
 
     args = parser.parse_args()
 
@@ -255,7 +261,9 @@ if __name__ == "__main__":
 
 
     run = run_optimizer_on_subject()
-    gsq = run(args.mus[0], args.sigmas[0], args.rho, args.mus[-1], args.sigmas[-1], args.test_learn, args.test_sym)
+    gsq = run(args.mus[0], args.sigmas[0], args.rho, args.mus[-1], args.sigmas[-1], args.experiment)
+    print(gsq)
+    
 
 
 
