@@ -68,7 +68,6 @@ def get_data_stats():
 
     t_r = np.mean(difference_r)/(np.std(difference_r)/math.sqrt(15))
     t_i = np.mean(difference_i)/(np.std(difference_i)/math.sqrt(15))
-    print(t_i, t_r)
     return avg_stats
 
 
